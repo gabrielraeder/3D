@@ -1,0 +1,35 @@
+{
+  "panel_mm": [
+    100.0,
+    131.2
+  ],
+  "max_height_mm": 4.48,
+  "total_layers": 55,
+  "first_layer_mm": 0.16,
+  "layer_height_mm": 0.08,
+  "mean_color_error_deltaE": 10.8,
+  "swaps": [
+    {
+      "filament": "Marrom",
+      "hex": "#6E4A2E",
+      "start_height_mm": 0.72,
+      "start_layer_number": 9
+    },
+    {
+      "filament": "Caramelo",
+      "hex": "#C99A64",
+      "start_height_mm": 1.44,
+      "start_layer_number": 18
+    },
+    {
+      "filament": "Branco",
+      "hex": "#F2F2F2",
+      "start_height_mm": 2.32,
+      "start_layer_number": 29
+    }
+  ],
+  "start_filament": {
+    "filament": "Preto",
+    "hex": "#1A1A1A"
+  }
+}

@@ -8,14 +8,17 @@ Esta pasta (`C:\writechoice\3D`) guarda os arquivos de impressão 3D do Gabriel.
 - Código, nomes de variáveis, nomes de parâmetros e comentários no código: **inglês**.
 - Termos técnicos ficam em inglês (infill, brim, overhang, slicer etc.).
 
-## Impressoras
+## Impressora
 
-| Impressora | Volume útil (X × Y × Z) | Bico | Observações |
-|---|---|---|---|
-| Bambu Lab A1 Combo (principal) | 256 × 256 × 256 mm | 0,4 mm | AMS lite, até 4 cores |
-| Creality Ender-3 V3 SE | 220 × 220 × 250 mm | 0,4 mm | uma cor |
+**Bambu Lab A1 Combo** (com AMS lite):
 
-- Por padrão, projete para caber nas **duas** (≤ 220 × 220 × 250 mm). Se a peça precisar ser maior, avise e projete só para a A1.
+- Volume útil: **256 × 256 × 256 mm**
+- Bico: 0,4 mm
+- AMS lite: até 4 filamentos/cores na mesma impressão
+
+Regras:
+
+- Projete para caber em 256 × 256 × 256 mm, de preferência com alguns milímetros de margem (≤ 250 mm em X e Y).
 - Peças maiores que o volume útil devem ser divididas em partes com encaixe, pino ou parafuso.
 
 ## Ferramenta
@@ -104,6 +107,48 @@ Padrão, a menos que o modelo exija outra coisa:
 - Infill: 15% (peças decorativas) a 30–40% (peças funcionais), padrão gyroid
 - Suporte: não, se o modelo seguir as regras acima
 - Brim: só se a base for pequena ou alta e estreita
+
+## Fluxo foto → peça
+
+Quando o pedido partir de uma foto (pet, pessoa, objeto, logo do próprio cliente), escolha um dos três tipos abaixo. Se o Gabriel não disser qual, pergunte, mostrando as opções em uma linha cada.
+
+Em todos os casos:
+
+- Guarde a foto original em `modelos\<nome>\fonte\`.
+- **Fotos de clientes não vão para o git.** Garanta que `fonte/` esteja no `.gitignore` antes de salvar qualquer foto.
+- Dependências Python (instale com permissão): `pip install pillow numpy opencv-python trimesh rembg`.
+- Mostre um **preview** (PNG) da etapa intermediária (contorno, cores separadas) e espere o OK do Gabriel antes de gerar o STL final, porque o resultado depende muito da foto.
+
+### 1. Litofania
+
+A foto vira uma placa em relevo: partes escuras ficam grossas, partes claras ficam finas, e a imagem aparece com luz atrás.
+
+- Gere com um script Python (`make_lithophane.py`) que converte a imagem em tons de cinza num heightmap e exporta STL com `trimesh`.
+- Parâmetros (no topo do script): largura (padrão 100 mm), espessura mínima 0,8 mm, espessura máxima 3,0 mm, moldura de 3 mm, formato (plana ou curva), resolução (~0,2 mm por pixel).
+- Antes de converter: recorte para o enquadramento desejado, aumente o contraste e converta para tons de cinza.
+- Impressão sugerida (README): PLA **branco**, camada 0,12 mm, infill 100%, imprimir **em pé** com brim, velocidade reduzida.
+
+### 2. Silhueta / contorno
+
+O contorno do objeto da foto vira uma peça plana extrudada: chaveiro, tag de coleira, placa com nome, quadro de parede, cortador de biscoito.
+
+- Remova o fundo com `rembg` (ou limiarização, se o fundo for liso).
+- Extraia o contorno com OpenCV (`findContours`), suavize e simplifique (`approxPolyDP`) e elimine detalhes menores que 1 mm.
+- Gere o `.scad` com o contorno como `polygon()` (ou exporte SVG e use `import()`), e aplique `linear_extrude()`.
+- Parâmetros: tamanho final (maior lado), espessura (3–4 mm), texto opcional, argola (furo de 4–5 mm com parede de 2 mm), contorno externo/offset.
+- Cortador de biscoito: parede de 0,8–1,2 mm, altura 12–15 mm, aba de 5 mm no topo para firmeza. Lembre que **não** é seguro para contato com alimentos (ver Cuidados); sugira uso só para marcar, ou peça de inox.
+
+### 3. Relevo multicor (AMS lite)
+
+A foto simplificada em 2 a 4 cores, cada cor em uma camada de altura diferente.
+
+- Reduza a imagem para **no máximo 4 cores** (k-means no OpenCV), já que o AMS lite tem 4 slots. Mostre a imagem posterizada para aprovação.
+- Cada cor vira um STL separado (`<nome>-cor1.stl`, `<nome>-cor2.stl`…) com **o mesmo ponto de origem**, empilhados: base de 1,0 mm + 0,6 mm por camada de cor.
+- No README, liste qual STL corresponde a qual cor, para atribuir os filamentos no Bambu Studio.
+
+### Escultura 3D realista (fora do escopo)
+
+Uma figura 3D realista a partir de foto não sai bem com OpenSCAD nem com scripts. Explique isso e sugira uma ferramenta de IA de imagem para 3D (ex.: as do MakerLab no MakerWorld, Meshy, Tripo). Depois que o Gabriel tiver o STL, você pode **finalizar**: corrigir a malha com `trimesh`, ajustar a escala, cortar a base plana e adicionar um pedestal com nome.
 
 ## Cuidados
 
