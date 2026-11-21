@@ -1,4 +1,7 @@
-// Under-desk drawers v2 - drawers hanging from printed rails (no housing).
+// Under-desk drawers v2.2 - drawers hanging from printed rails (no housing).
+//
+// v2.2: rail web 2.5 -> 4 mm (FEA: half the web stress, rail mouth deflection with a 2 kg
+// drawer 70 % open 1.31 -> 0.58 mm). The web grows away from the slot: slot fit unchanged.
 //
 // Each drawer hangs from two rails screwed to the underside of the tabletop. The top of
 // each drawer side wall turns inwards at 45 deg into an "arm" that slides in a 45 deg slot
@@ -10,12 +13,11 @@
 // The rail next to the leg column stays on the wood, just before the metal bracket (aba);
 // the drawer passes under the bracket (everything there is >= 9 mm below the tabletop).
 //
-// Print: rails upside down (mounting flange on the bed), drawers on their bottom.
+// Print: rails standing (rail length vertical, tooth end on the bed), drawers on their bottom.
 // No supports anywhere.
 
 /* [Part to render] */
-// assembly | section | front_drawer | front_rail_left | front_rail_right |
-// side_drawer | side_rail_left | side_rail_right
+// assembly | section | front_drawer | front_rails | side_drawer | side_rails | fit_test
 part = "assembly";
 // Drawer opening in the assembly view (0 = closed, 1 = fully open)
 assembly_open = 0.6;
@@ -40,7 +42,9 @@ panel_clear = 0.5;          // gap around the panel, each side (mm)
 /* [Drawer] */
 hang_depth = 110;           // tabletop to drawer bottom (mm)
 wall = 1.6;                 // drawer side and back walls (mm)
-front_t = 2.0;              // front panel (mm)
+front_t = 2.4;              // front panel (mm)
+corner_r = 2;               // rounded vertical outer corners (hides the seam) (mm)
+front_chamfer = 0.8;        // chamfer on the top edge of the front panel (mm)
 ledge_w = 4;                // ledge that carries the MDF panel (mm)
 ledge_t = 1.2;              // ledge thickness (mm)
 top_gap = 1;                // front panel top to tabletop (mm)
@@ -52,8 +56,8 @@ arm_reach = 12;             // drawer wall outer face to rail web (mm)
 top_clear = 9;              // highest slot part below the tabletop (bracket 7 + 2) (mm)
 plate_t = 2.4;              // rail plates, measured across (mm)
 arm_t = 2.0;                // drawer arm, measured across (mm)
-slide_clear = 0.3;          // gap arm <-> rail plates, measured across (mm)
-web_t = 2.5;                // rail web (mm)
+slide_clear = 0.5;          // gap arm <-> rail plates, measured across (mm)
+web_t = 4;                  // rail web (mm); v2.1 was 2.5
 flange_w = 16;              // mounting flange width beyond the web (mm)
 flange_t = 3;               // mounting flange thickness (mm)
 tip_gap = 1;                // arm tip to rail web (mm)
@@ -66,7 +70,7 @@ rail_front = 3;             // rail starts this far behind the drawer front face
 max_open_ratio = 0.7;       // fraction of the drawer length that comes out
 tooth_len = 30;             // tooth length at the rail entrance (mm)
 tooth_lead = 4;             // lead-in ramp at the tooth entrance (mm)
-bump_h = 0.8;               // bump height on the arm, measured across (mm)
+bump_h = 1.0;               // bump height on the arm, measured across (mm)
 entry_angle = 30;           // bump ramp on the insertion side (deg)
 stop_angle = 45;            // bump ramp on the stop side (deg)
 
@@ -74,6 +78,14 @@ stop_angle = 45;            // bump ramp on the stop side (deg)
 screw_d = 3.8;              // hole for 3.5 mm countersunk wood screws (mm)
 screw_head_d = 7.5;         // countersink diameter (mm)
 screw_end = 15;             // first screw from each rail end (mm)
+
+/* [Truss joining a rail pair] */
+// The rail pair prints standing (rail length vertical): a bottom bar plus 45 deg zigzag
+// struts, all flush with the tabletop, keep both rails at the right spacing.
+bar_w = 10;                 // bottom bar width (mm)
+strut_w = 8;                // zigzag strut width (mm)
+bar_t = 2;                  // bar / strut thickness, flush with the tabletop (mm)
+bar_overlap = 5;            // overlap onto each rail flange (mm)
 
 rail_clear = 2;             // back wall top below the lowest rail point (mm)
 
@@ -129,6 +141,24 @@ module tooth_2d(thin = 0) {
     band(c_top, c_up_bot + thin * s2, -eps, u_up);
 }
 
+// Drawer arm: 45 deg band from the wall top to the tip, with a flat top at the tip
+// (a sharp tip would print as thin slivers that curl up).
+u_cut = arm_t * s2 + tip_gap;                // where the flat tip meets the arm top face
+v_cut = c_arm_bot - tip_gap;                 // flat tip height (v)
+module arm_2d() {
+    polygon([[tip_gap, v_cut], [u_cut, v_cut], [arm_reach, c_arm_top - arm_reach],
+             [arm_reach, c_arm_bot - arm_reach]]);
+}
+
+// Teardrop pointing to +y (up when the rail prints standing).
+module teardrop_up(d) {
+    r = d / 2;
+    hull() {
+        circle(r = r);
+        polygon([[-r * cos(45), r * sin(45)], [0, r * s2], [r * cos(45), r * sin(45)]]);
+    }
+}
+
 // Extrude a 2D (u, v) profile along +y over [y0, y1]; u -> x, v -> z.
 module along_y(y0, y1) {
     translate([0, y1, 0]) rotate([90, 0, 0]) linear_extrude(y1 - y0) children();
@@ -154,9 +184,10 @@ module rail(len) {
             along_y(tooth_lead, tooth_len) tooth_2d();
         }
         for (y = screw_ys(len)) translate([-web_t - flange_w / 2, y, 0]) {
-            translate([0, 0, -flange_t - 1]) cylinder(d = screw_d, h = flange_t + 2);
+            translate([0, 0, -flange_t - 1]) linear_extrude(flange_t + 2) teardrop_up(screw_d);
             translate([0, 0, -flange_t - eps])
-                cylinder(d1 = screw_head_d, d2 = screw_d, h = (screw_head_d - screw_d) / 2);
+                linear_extrude((screw_head_d - screw_d) / 2, scale = screw_d / screw_head_d)
+                    teardrop_up(screw_head_d);
         }
     }
 }
@@ -165,37 +196,70 @@ module rail(len) {
 
 function bump_y(L) = rail_front + tooth_len + max_open_ratio * L;
 
+// Stop bump on the arm top face at y = yb (rail-local u/v frame, extruded along y).
+module arm_bump(yb) {
+    u0 = u_cut + 0.5;
+    u1 = u_up - 1;
+    module slice(y, h) along_y(y, y + eps) band(c_arm_top + h * s2, c_arm_top - eps, u0, u1);
+    hull() { slice(yb - bump_h / tan(stop_angle), eps); slice(yb, bump_h); }
+    hull() { slice(yb, bump_h); slice(yb + bump_h / tan(entry_angle), eps); }
+}
+
 // Arm on the +x side of a drawer of width W, in drawer coordinates (bottom at z = 0).
 module arm_right(W, L) {
     translate([W - arm_reach, 0, hang_depth]) {
-        along_y(0, L) band(c_arm_top, c_arm_bot, tip_gap, arm_reach);
-        // stop bump on top of the arm
-        yb = bump_y(L);
-        hull() {
-            along_y(yb - bump_h / tan(stop_angle), yb - bump_h / tan(stop_angle) + eps)
-                band(c_arm_top + eps, c_arm_top - eps, tip_gap + 0.5, u_up - 1);
-            along_y(yb, yb + eps)
-                band(c_arm_top + bump_h * s2, c_arm_top - eps, tip_gap + 0.5, u_up - 1);
-        }
-        hull() {
-            along_y(yb, yb + eps)
-                band(c_arm_top + bump_h * s2, c_arm_top - eps, tip_gap + 0.5, u_up - 1);
-            along_y(yb + bump_h / tan(entry_angle), yb + bump_h / tan(entry_angle) + eps)
-                band(c_arm_top + eps, c_arm_top - eps, tip_gap + 0.5, u_up - 1);
+        along_y(0, L) arm_2d();
+        arm_bump(bump_y(L));
+    }
+}
+
+// Rail pair of a drawer joined by a truss (one printed part, sets spacing and parallelism).
+// Drawer coordinates: tabletop at z = hang_depth, rails start at y = rail_front.
+module drawer_rails(W, len) {
+    x0 = arm_reach + web_t + flange_w - bar_overlap;     // truss edge on the left flange
+    x1 = W - x0;                                         // truss edge on the right flange
+    xs = x0 + strut_w / 2;                               // strut end on the left
+    xm = W / 2;
+    d = xm - xs;                                         // 45 deg: rise = run
+    module node(x, y) translate([x, y]) square(strut_w, center = true);
+    translate([0, rail_front, hang_depth]) {
+        translate([W - arm_reach, 0, 0]) rail(len);
+        translate([arm_reach, 0, 0]) mirror([1, 0, 0]) rail(len);
+        // truss, flush with the tabletop
+        translate([0, 0, -bar_t]) linear_extrude(bar_t) intersection() {
+            union() {
+                translate([x0, 0]) square([x1 - x0, bar_w]);                    // bottom bar
+                // diamonds: centre -> both rails -> centre -> ...
+                for (k = [0 : 1 : ceil(len / (2 * d))]) {
+                    yc = bar_w / 2 + 2 * k * d;
+                    for (xe = [xs, W - xs]) {
+                        hull() { node(xm, yc); node(xe, yc + d); }
+                        hull() { node(xe, yc + d); node(xm, yc + 2 * d); }
+                    }
+                }
+            }
+            translate([x0, 0]) square([x1 - x0, len]);
         }
     }
 }
 
-// Rails of a drawer, in drawer coordinates with the tabletop at z = hang_depth.
-module drawer_rails(W, len) {
-    translate([W - arm_reach, rail_front, hang_depth]) rail(len);
-    translate([arm_reach, rail_front, hang_depth]) mirror([1, 0, 0]) rail(len);
+// Outer envelope of a drawer: rounded vertical corners, elephant-foot chamfer at the base.
+module drawer_clip(W, L, H) {
+    module footprint(inset) {
+        offset(r = corner_r) offset(delta = -corner_r - inset) square([W, L]);
+    }
+    hull() {
+        linear_extrude(eps) footprint(foot_chamfer);
+        translate([0, 0, foot_chamfer]) linear_extrude(H + 1) footprint(0);
+    }
 }
 
 // Drawer: front face at y = 0, bottom at z = 0, x in [0, W].
 module drawer(W, L) {
     H = hang_depth - top_gap;
     notch = min(grip_depth, H / 3);
+    intersection() {
+    drawer_clip(W, L, H);
     difference() {
         union() {
             // ledge ring carrying the MDF panel
@@ -226,6 +290,32 @@ module drawer(W, L) {
                     translate([grip_width / 2 - notch / 2, -notch / 2]) circle(d = notch);
                     translate([-grip_width / 2, -notch - 1]) square([grip_width, 1]);
                 }
+        // chamfer on the top front edge
+        translate([-1, 0, 0]) multmatrix([[0, 0, 1, 0], [1, 0, 0, 0], [0, 1, 0, 0]])
+            linear_extrude(W + 2)
+                polygon([[-1, H - front_chamfer - 1], [-1, H + 1], [front_chamfer + 1, H + 1]]);
+    }
+    }
+}
+
+// ---------------------------------------------------------------- fit test
+
+// Short rail + short drawer wall with arm and stop bump, to check the slide and the stop
+// before printing a full drawer. Slide the coupon into the rail from the tooth end.
+test_len = 50;
+
+module fit_test() {
+    // rail, printed standing like the real rails (tooth end on the bed)
+    rail_standing() rail(test_len);
+    // coupon: drawer wall + arm, standing on a small foot (same orientation as the drawer)
+    v0 = c_arm_top - arm_reach - 20;                     // wall bottom (v)
+    translate([45, 0, -v0]) {
+        along_y(0, test_len) {
+            arm_2d();
+            translate([arm_reach - wall, v0]) square([wall, c_arm_top - arm_reach - v0]);
+            translate([arm_reach - 8, v0]) square([16, 2]);
+        }
+        arm_bump(test_len - 10);
     }
 }
 
@@ -283,17 +373,21 @@ module section() {
 
 // ---------------------------------------------------------------- print orientation
 
-// Rails print upside down: mounting flange on the bed.
-module rail_print(len, left) {
-    rotate([180, 0, 0]) translate([0, -len, 0])
-        if (left) mirror([1, 0, 0]) rail(len); else rail(len);
+// Rails print standing: rail length vertical, entrance (tooth end) on the bed. The profile
+// is then a plain 2D layer: no overhangs, smooth and accurate sliding faces.
+// Input frame: rail entrance at y = 0, tabletop at z = 0.
+module rail_standing() {
+    rotate([90, 0, 0]) children();
+}
+
+module rails_print(W, len) {
+    rail_standing() translate([0, -rail_front, -hang_depth]) drawer_rails(W, len);
 }
 
 if (part == "assembly") assembly();
 else if (part == "section") section();
 else if (part == "front_drawer") drawer(front_W, front_L);
-else if (part == "front_rail_left") rail_print(front_rail_len, true);
-else if (part == "front_rail_right") rail_print(front_rail_len, false);
-else if (part == "side_drawer") drawer(side_W, side_L, false);
-else if (part == "side_rail_left") rail_print(side_rail_len, true);
-else if (part == "side_rail_right") rail_print(side_rail_len, false);
+else if (part == "front_rails") rails_print(front_W, front_rail_len);
+else if (part == "side_drawer") drawer(side_W, side_L);
+else if (part == "side_rails") rails_print(side_W, side_rail_len);
+else if (part == "fit_test") fit_test();
