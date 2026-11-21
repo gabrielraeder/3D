@@ -23,30 +23,27 @@ O trilho do lado da haste fica todo na madeira, logo antes da aba metálica do p
 
 ## Peças desta pasta
 
-Nesta versão só foram exportadas as peças da **gaveta da frente**.
-
 | Arquivo | Qtd. | Tamanho na mesa (mm) | Peso aprox. |
 |---|---|---|---|
 | `gaveteiro-mesa-v2.3-trilhos-frente.stl`: par de trilhos da frente (impresso em pé) | 1 | 149 × 30, altura 140 | ~65 g |
 | `gaveteiro-mesa-v2.3-gaveta-frente.stl`: gaveta da frente (igual à v2.2) | 1 | 154 × 215, altura 109 | ~160 g |
+| `gaveteiro-mesa-v2.3-trilhos-lateral.stl`: par de trilhos lateral (impresso em pé) | 2 | 209 × 30, altura 100 | ~50 g cada |
+| `gaveteiro-mesa-v2.3-gaveta-lateral.stl`: gaveta lateral (igual à v2.1) | 2 | 214 × 155, altura 109 | ~165 g cada |
 
-O peso dos trilhos é uma estimativa feita pelo volume sólido (53,5 cm³). O Bambu Studio deve mostrar um pouco menos, por causa do infill nas partes mais grossas.
+As **duas gavetas laterais são iguais**. Imprima 2× o mesmo STL de trilhos e 2× o mesmo STL de gaveta. Cada par de trilhos é simétrico e serve nas duas posições.
+
+Os pesos dos trilhos são estimativas feitas pelo volume sólido: 53,5 cm³ na frente e 41,5 cm³ nas laterais. O Bambu Studio deve mostrar um pouco menos, por causa do infill nas partes mais grossas.
 
 Cada par de trilhos sai como **uma peça só**, ligado pela treliça. Isso garante a distância e o paralelismo na instalação. A treliça fica encostada no tampo e pode ficar ali para sempre.
 
-As **gavetas laterais** e os trilhos laterais ainda não foram exportados. Quando for imprimir, gere a partir deste `.scad`:
-
-```
-openscad -o gaveteiro-mesa-v2.3-trilhos-lateral.stl -D 'part="side_rails"' gaveteiro-mesa-v2.3.scad
-openscad -o gaveteiro-mesa-v2.3-gaveta-lateral.stl -D 'part="side_drawer"' gaveteiro-mesa-v2.3.scad
-```
-
 O teste de encaixe aprovado está na pasta [v2.1](../v2.1/). A canaleta não mudou, então não precisa repetir.
 
-### Outros materiais (gaveta da frente)
+![gaveta lateral](preview-gaveta-lateral.png)
 
-- **1 placa de MDF cru de 15 × 21 cm, 3 mm.**
-- **4 parafusos para madeira de cabeça chata (escareada), 3,5 × 16 mm.** São 2 por trilho. No conjunto completo são 12.
+### Outros materiais
+
+- **Placas de MDF cru de 15 × 21 cm, 3 mm:** uma por gaveta. Na lateral, a placa entra com o lado de 21 cm atravessado, de uma parede lateral à outra.
+- **Parafusos para madeira de cabeça chata (escareada), 3,5 × 16 mm:** 2 por trilho, ou seja, 4 por gaveta e 12 no conjunto.
 
 ## Medidas
 
@@ -81,10 +78,17 @@ Para o melhor acabamento:
   - Deixe o lado comprido da base (149 mm) na direção **frente-trás** da mesa da impressora, que é o sentido em que ela se move.
   - A ponta da rampa do dente tem 0,9 mm na primeira camada. Se a boca do trilho sair justa, a causa provável é o pé de elefante. Uma passada de estilete resolve.
 
+- **Gaveta lateral:** como a da frente, apoiada no fundo e com a frente (a parede com o recorte para os dedos) virada para a frente da mesa da impressora. A peça ocupa 214 × 155 mm.
+- **Trilhos laterais:** como os da frente. Deixe o lado de 209 mm na direção frente-trás da mesa da impressora.
+
 ### Ordem sugerida
 
-1. **Trilhos da frente.**
-2. **Gaveta da frente.**
+Primeiro uma **lateral, como piloto**: ela fica escondida, então dá para testar o conjunto real (impressão, deslize, trava, MDF, instalação) antes de imprimir a da frente.
+
+1. **Trilhos laterais** (1 par).
+2. **Gaveta lateral** (1).
+3. Instalar na **posição da lateral 2**, a mais ao fundo, e testar com peso.
+4. Ajustar o modelo se precisar e então imprimir a frente e a outra lateral.
 
 ## Validação (text-to-cad, 20/11/2026)
 
@@ -122,6 +126,15 @@ A análise não cobre impacto (bater a gaveta ou o puxão para soltar a trava), 
 3. **Faça os furos-guia:** 2 mm no tampo, com cuidado para não atravessar.
 4. **Parafuse:** use os parafusos 3,5 × 16 mm de cabeça chata.
 5. **Coloque a gaveta:** encaixe os braços nos trilhos pela frente e empurre. O braço passa pelo dente com um clique na primeira vez. Com a gaveta fechada, o fundo dela passa além do fim dos trilhos; isso é esperado.
+
+**Gavetas laterais:** abrem para a borda lateral da mesa. Os trilhos ficam perpendiculares à borda lateral, com a ponta do dente a **3 mm** dela. Fechada, a frente da gaveta fica rente à borda. As posições ao longo da profundidade da mesa, medidas a partir da borda da frente, são:
+
+| Gaveta | Faces externas da gaveta | Par de trilhos (bordas externas) |
+|---|---|---|
+| Lateral 1 | 24,5 a 45,9 cm | 24,7 a 45,7 cm |
+| Lateral 2 | 46,9 a 68,3 cm | 47,2 a 68,1 cm |
+
+A gaveta lateral passa por baixo da aba metálica na parte de trás, como a da frente.
 
 Para tirar a gaveta: abra até a trava e dê um puxão firme.
 

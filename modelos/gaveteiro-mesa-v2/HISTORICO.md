@@ -9,8 +9,8 @@ Contexto para continuar o projeto em outra sessão.
 - O **teste de encaixe v2.1 passou**: o braço desliza bem no trilho e a trava funciona.
 - A **v2.2** engrossou a alma do trilho de 2,5 para 4 mm, depois da análise de tensão.
 - A **v2.3** fechou a treliça nos topos dos trilhos e encurtou os trilhos (frente 140 mm, laterais 100 mm). A canaleta não mudou desde a v2.1, então o teste de encaixe continua valendo.
-- **Próximo passo:** imprimir os trilhos da frente e a gaveta da frente da v2.3. Os STLs estão prontos em `v2.3/`.
-- As gavetas laterais ainda não foram impressas nem exportadas na v2.3.
+- **Próximo passo (21/11/2026):** imprimir primeiro **uma lateral como piloto** (1 par de trilhos laterais e 1 gaveta lateral) e instalar na posição da lateral 2, a mais ao fundo. Ela fica escondida, e o que der errado vira melhoria antes de imprimir a gaveta da frente, que é a visível.
+- Todos os STLs da v2.3 estão prontos em `v2.3/`: frente e lateral. As duas laterais são iguais (2× o mesmo STL).
 - O MDF já chegou: 15 × 21 cm, 3 mm, medida exata.
 
 ## O espaço na mesa
@@ -80,18 +80,20 @@ Contexto para continuar o projeto em outra sessão.
 |---|---|---|---|---|
 | `gaveteiro-mesa-v2.3-trilhos-frente.stl` | 1 | 149 × 30 × **140 em pé** | ~65 g (estimado) | em pé, ponta do dente na mesa, brim só externo de 5 mm |
 | `gaveteiro-mesa-v2.3-gaveta-frente.stl` | 1 | 154 × 215 × 109 | 160 g | apoiada no fundo, frente virada para a frente da mesa da impressora |
+| `gaveteiro-mesa-v2.3-trilhos-lateral.stl` | 2 | 209 × 30 × **100 em pé** | ~50 g (estimado) | igual aos trilhos da frente |
+| `gaveteiro-mesa-v2.3-gaveta-lateral.stl` | 2 | 214 × 155 × 109 | 165 g | apoiada no fundo (igual à v2.1) |
 
 **v2.2, em `v2.2/`:** trilhos da frente com 210 mm e a mesma gaveta. Foi substituída pela v2.3.
 
-**v2.1, em `v2.1/`, com alma de 2,5 mm.** As laterais ainda não foram geradas na v2.3.
+**v2.1, em `v2.1/`, com alma de 2,5 mm.**
 
 | Arquivo | Qtd. | Tamanho (mm) | Peso | Orientação |
 |---|---|---|---|---|
 | `gaveteiro-mesa-v2-teste-encaixe.stl` | 1 | 84 × 50 × 50 | 14 g | já testado, aprovado |
 | `gaveteiro-mesa-v2-trilhos-frente.stl` | 1 | 149 × 30 × **210 em pé** | 86 g | substituído pela v2.3 |
 | `gaveteiro-mesa-v2-gaveta-frente.stl` | 1 | 154 × 215 × 109 | 160 g | igual à v2.3 |
-| `gaveteiro-mesa-v2-trilhos-lateral.stl` | 2 | 209 × 30 × **140 em pé** | 61 g | gerar de novo pela v2.3 |
-| `gaveteiro-mesa-v2-gaveta-lateral.stl` | 2 | 214 × 155 × 109 | 165 g | apoiada no fundo |
+| `gaveteiro-mesa-v2-trilhos-lateral.stl` | 2 | 209 × 30 × **140 em pé** | 61 g | substituído pela v2.3 |
+| `gaveteiro-mesa-v2-gaveta-lateral.stl` | 2 | 214 × 155 × 109 | 165 g | igual à v2.3 |
 
 Para gerar uma peça: `openscad -o x.stl -D 'part="front_drawer"' gaveteiro-mesa-v2.3.scad`.
 
@@ -127,12 +129,11 @@ A versão 2021.01 do OpenSCAD não tem o backend manifold. Para checar se a peç
 
 ## Pendências
 
-- Imprimir os trilhos da frente e a gaveta da frente da v2.3. Instalar e testar com peso.
+- Piloto: imprimir 1 lateral da v2.3 (trilhos e gaveta), instalar na posição da lateral 2 e testar o deslize, a trava, o MDF e o peso. Anotar o que melhorar para a frente.
+- Depois: imprimir os trilhos e a gaveta da frente e a outra lateral.
 - Observar os cantos de trás no topo da gaveta (concentração de tensão apontada pela FEA).
-- Gerar os STLs laterais da v2.3 quando for imprimir as laterais.
 - Apagar `modelos/gaveteiro-mesa/` (v1), se o Gabriel liberar. Depois, talvez renomear a pasta v2.
 - Confirmar o preset no Bambu Studio.
-- Imprimir as gavetas laterais quando quiser.
 
 ## Preferências do Gabriel neste projeto
 

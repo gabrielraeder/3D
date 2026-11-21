@@ -23,9 +23,57 @@ Regras:
 
 ## Ferramenta
 
-Use **OpenSCAD** (preferência) ou, se a geometria for complexa demais para OpenSCAD (filetes, superfícies orgânicas), **build123d / CadQuery** em Python.
+Há duas ferramentas de modelagem. **Você escolhe** a melhor para cada pedido, sem esperar o Gabriel mandar, e diz em uma linha qual usou e por quê.
 
-Antes do primeiro modelo, confira se o OpenSCAD está instalado:
+| Use **text-to-cad** (plugin, build123d em Python) quando… | Use **OpenSCAD** quando… |
+| --- | --- |
+| a peça tem filetes/arredondamentos, lofts, cascas ou superfícies curvas | a peça é prismática e simples (caixa, espaçador, suporte reto, gabarito) |
+| são várias peças que encaixam (gaveta + trilho, tampa + caixa, dobradiça) e vale checar interferência e folga | é uma edição ou nova versão de um modelo que já está em `.scad` (não migre sem motivo) |
+| há mecanismo (dobradiça, corrediça, pino girando) e vale medir o curso | é o fluxo foto → silhueta (o contorno vira `polygon()`) |
+| a peça aguenta carga e a pergunta "vai aguentar?" importa (ver `fea` abaixo) | a mudança é só trocar um parâmetro (`-D "width=80"`) |
+| precisa partir de um STEP de fabricante, entregar STEP ou fazer desenho técnico | |
+
+Se o pedido cair nas duas colunas, prefira o text-to-cad em peças novas e o OpenSCAD em modelos `.scad` existentes. Fluxos de foto (litofania, relevo multicor) continuam como scripts Python próprios (ver "Fluxo foto → peça").
+
+### text-to-cad (skill `text-to-cad:cad`)
+
+- Carregue o skill `text-to-cad:cad` e siga as instruções dele (modelo = função `@model`, `cad run` reconstrói, `cad model export` gera arquivos). Confira `cad --version` antes do primeiro uso na conversa.
+- O script fica na pasta do modelo, com nome em snake_case (importável): `modelos\suporte-fone\suporte_fone.py`. Parâmetros como constantes ou argumentos de uma função helper no topo, em mm, com comentário curto.
+- Declare o material de cada peça como PLA impresso em FDM (`plastics.pla(process=fdm(layer_height_mm=0.2))`), e no docstring do módulo coloque a linha `Check:` com o comando de DFM (abaixo), para toda edição rodar a mesma checagem.
+- Depois do primeiro `cad run` que der certo, mostre ao Gabriel o link `view:` do CAD Viewer (ele atualiza a cada run).
+- Comandos úteis:
+
+```powershell
+cad run modelos\suporte-fone\suporte_fone.py                      # reconstrói; imprime id e link view:
+cad model snapshot $ID modelos\suporte-fone\preview.png --preview  # preview PNG
+cad model dfm $ID --process printing --technology fdm --material pla --build-volume 256x256x256
+cad model interference $ID                                         # montagens: peças não se sobrepõem
+cad model export $ID modelos\suporte-fone\suporte-fone.stl --tolerance 0.02   # ~1/10 da menor folga
+```
+
+### Outros skills do plugin: use quando fizer sentido
+
+- **`text-to-cad:fea`**: peça estrutural com carga conhecida (prateleira, gancho, suporte de parede, braço em balanço). Rode se o Gabriel informar a carga ou se ela for óbvia pelo pedido. Se não, ofereça. Coloque o resultado (fator de segurança, deflexão) no README.
+- **`text-to-cad:engineering-drawing`**: só quando pedirem desenho técnico/PDF com cotas.
+- **`text-to-cad:render`**: imagens fotorrealistas, útil para os itens de `produtos\` (anúncio, foto de capa). Só quando pedirem ou para produto à venda.
+- **`text-to-cad:print3d`** (fatiar no OrcaSlicer): **não use por padrão**, porque o Gabriel fatia no Bambu Studio. Só se ele pedir. Nunca inicie uma impressão.
+
+### Checagem de impressão (vale para as duas ferramentas)
+
+Todo STL final passa pela checagem de DFM do plugin, mesmo que tenha vindo do OpenSCAD:
+
+```powershell
+cad stl dfm modelos\suporte-fone\suporte-fone.stl --process printing --technology fdm --material pla --build-volume 256x256x256
+```
+
+- `FAILED` (exit 1): corrija antes de entregar. `NOT CHECKED` (exit 3) **não** é aprovação: resolva o motivo (malha aberta etc.).
+- Avisos: corrija se não mudar o que foi pedido; senão, cite no README.
+- O checador julga a peça **na orientação do arquivo** (base em Z=0). Exporte o STL já na orientação de impressão; se não for possível, avise no README e rode com `--candidates` para ver a melhor orientação.
+- As regras do checador são genéricas. Quando divergirem das "Regras de projeto para FDM" abaixo (ex.: tamanho de ponte), **valem as regras deste arquivo**, que já foram testadas na A1.
+
+### OpenSCAD
+
+Antes do primeiro modelo em OpenSCAD, confira se está instalado:
 
 ```powershell
 & "C:\Program Files\OpenSCAD\openscad.exe" --version
@@ -63,22 +111,27 @@ Cada modelo novo fica em `modelos\<nome-do-modelo>\` (kebab-case, em português,
 
 ```
 modelos\suporte-fone\
-├── suporte-fone.scad     ← fonte paramétrica
+├── suporte-fone.scad     ← fonte paramétrica (OpenSCAD), ou
+├── suporte_fone.py       ← fonte paramétrica (text-to-cad / build123d)
 ├── suporte-fone.stl      ← (ou várias: suporte-fone-base.stl, suporte-fone-tampa.stl)
 ├── preview.png
-└── README.md             ← o que é, medidas, como imprimir
+└── README.md             ← o que é, medidas, ferramenta usada, como imprimir
 ```
+
+Arquivos temporários (snapshots de conferência, scripts de checagem) vão para o scratchpad da sessão, não para a pasta do modelo.
 
 Nunca sobrescreva um modelo existente sem perguntar; para uma nova versão, crie `-v2` ou atualize mantendo o histórico no README.
 
 ## Fluxo de trabalho
 
 1. **Entender o pedido.** Se faltar uma medida essencial (ex.: tamanho do objeto que vai encaixar), pergunte antes. Se o resto for detalhe, escolha um valor razoável e diga qual escolheu.
-2. **Escrever o `.scad` paramétrico.** Todos os valores ajustáveis como variáveis no topo do arquivo, com comentário curto e unidade (mm). Nada de número mágico no meio da geometria.
-3. **Gerar o preview PNG e olhar a imagem** para confirmar que a forma está certa. Corrija antes de seguir.
-4. **Exportar o STL** e conferir que a exportação não deu erro nem aviso de geometria não-manifold.
-5. **Escrever o README.md** do modelo com: descrição, dimensões finais, parâmetros principais, orientação na mesa e configurações sugeridas de impressão (ver abaixo).
-6. **Resumir para o Gabriel** em poucas linhas: o que foi criado, onde está e qualquer suposição que você fez.
+2. **Escolher a ferramenta** pela tabela em "Ferramenta" e dizer qual foi.
+3. **Escrever o modelo paramétrico** (`.scad` ou `.py`). Todos os valores ajustáveis como variáveis/constantes no topo do arquivo, com comentário curto e unidade (mm). Nada de número mágico no meio da geometria.
+4. **Gerar o preview PNG e olhar a imagem** para confirmar que a forma está certa. Com text-to-cad, mande também o link do CAD Viewer. Em montagens, rode `cad model interference`. Corrija antes de seguir e **espere o OK do Gabriel** antes de exportar.
+5. **Exportar o STL** e conferir que a exportação não deu erro nem aviso de geometria não-manifold.
+6. **Rodar a checagem de DFM** no STL (ver "Checagem de impressão") e, se a peça for estrutural, considerar o `fea`.
+7. **Escrever o README.md** do modelo com: descrição, ferramenta usada, dimensões finais, parâmetros principais, orientação na mesa, resultado da checagem (avisos que ficaram) e configurações sugeridas de impressão (ver abaixo).
+8. **Resumir para o Gabriel** em poucas linhas: o que foi criado, onde está, a ferramenta escolhida, o resultado das checagens e qualquer suposição que você fez.
 
 ## Regras de projeto para FDM
 
@@ -95,7 +148,7 @@ Projete pensando na impressão, não só na forma:
 - **Texto em relevo/baixo-relevo:** altura mínima de ~5 mm e profundidade de 0,6–1 mm; prefira fontes sem serifa e em negrito.
 - **Resistência:** a peça é mais fraca entre camadas (eixo Z). Oriente para que o esforço principal fique no plano XY.
 - **Multicor (AMS lite):** se o pedido envolver cores, separe cada cor em um STL próprio com o mesmo ponto de origem, para o Gabriel atribuir os filamentos no Bambu Studio.
-- **Resolução de curvas:** use `$fn` adequado (ex.: 64–128 para cilindros visíveis), definido como parâmetro.
+- **Resolução de curvas:** no OpenSCAD, use `$fn` adequado (ex.: 64–128 para cilindros visíveis), definido como parâmetro. No text-to-cad, a geometria é exata e a resolução vem do `--tolerance` do export (~1/10 da menor folga; 0,02 mm é um bom padrão).
 
 ## Configurações sugeridas (para o README)
 
@@ -148,7 +201,7 @@ A foto simplificada em 2 a 4 cores, cada cor em uma camada de altura diferente.
 
 ### Escultura 3D realista (fora do escopo)
 
-Uma figura 3D realista a partir de foto não sai bem com OpenSCAD nem com scripts. Explique isso e sugira uma ferramenta de IA de imagem para 3D (ex.: as do MakerLab no MakerWorld, Meshy, Tripo). Depois que o Gabriel tiver o STL, você pode **finalizar**: corrigir a malha com `trimesh`, ajustar a escala, cortar a base plana e adicionar um pedestal com nome.
+Uma figura 3D realista a partir de foto não sai bem com OpenSCAD nem com scripts. Explique isso e sugira uma ferramenta de IA de imagem para 3D (ex.: as do MakerLab no MakerWorld, Meshy, Tripo). Depois que o Gabriel tiver o STL, você pode **finalizar**: corrigir a malha com `trimesh`, ajustar a escala, cortar a base plana e adicionar um pedestal com nome (o pedestal pode ser um modelo text-to-cad que lê a malha com `stl.read`). Rode a checagem de DFM no resultado: malhas geradas por IA costumam vir abertas.
 
 ## Cuidados
 

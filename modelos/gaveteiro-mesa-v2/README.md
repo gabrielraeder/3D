@@ -4,7 +4,7 @@ Três gavetas penduradas embaixo do tampo, cada uma correndo num par de trilhos 
 
 | Versão | Pasta | Situação |
 |---|---|---|
-| **v2.3** | [v2.3/](v2.3/) | **Atual.** Trilhos mais curtos (140 / 100 mm) e treliça fechada. Só a gaveta da frente e seus trilhos foram exportados. |
+| **v2.3** | [v2.3/](v2.3/) | **Atual.** Trilhos mais curtos (140 / 100 mm) e treliça fechada. Exportados: gaveta da frente e lateral, com seus trilhos. |
 | v2.2 | [v2.2/](v2.2/) | Alma do trilho de 4 mm, trilhos no comprimento cheio. Substituída pela v2.3. |
 | v2.1 | [v2.1/](v2.1/) | Teste de encaixe aprovado. Tem todos os STLs, incluindo as laterais, com a alma de 2,5 mm. |
 
